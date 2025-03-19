@@ -10,8 +10,8 @@ Frontend update so that the app displays information from a JSON file. Here is w
   "password": "String", //required
   "password_hint": "String" //optional
   "questions": [    //optional
-    ["question", "answer"],
-    ["question", "answer"]
+    ["question -> String", "answer -> String"],
+    ["question -> String", "answer -> String"]
   ],
   "notes": "String" //optional
 },
