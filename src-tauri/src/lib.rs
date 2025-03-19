@@ -28,7 +28,7 @@ fn set_excludes(arr: Vec<char>) -> bool {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, pm_generate_password])
+        .invoke_handler(tauri::generate_handler![greet, pm_generate_password, accounts::account::init_accounts, accounts::account::init_accounts_json])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

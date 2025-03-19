@@ -15,7 +15,8 @@ impl GeneratorManager {
         GeneratorManager {
             characters: characters,
             specials: vec![
-                ('!', '/'),
+                ('!', '!'),
+                ('#', '#'),
                 (':', '@'),
                 ('[', '^'),
                 ('_', '`'),

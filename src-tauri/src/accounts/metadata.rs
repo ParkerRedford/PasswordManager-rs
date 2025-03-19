@@ -31,7 +31,7 @@ impl MetaManager {
 
             f.seek(SeekFrom::Start(offset as u64))?;
 
-            let mut buf = vec![0; META_SIZE];
+            let mut buf: [u8; META_SIZE] = [0; META_SIZE];
 
             f.read_exact(&mut buf)?;
 

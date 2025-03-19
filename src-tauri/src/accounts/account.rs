@@ -18,13 +18,13 @@ pub struct Question {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Account {
-    pub id: Uuid,
+    pub id: Option<Uuid>,
     pub website: String,
-    pub username: String,
+    pub username: Option<String>,
     pub password: String,
-    pub password_hint: String,
-    pub questions: Vec<Question>,
-    pub notes: String
+    pub password_hint: Option<String>,
+    pub questions: Option<Vec<(String, String)>>,
+    pub notes: Option<String>
 }
 
 impl Account {
@@ -35,42 +35,35 @@ impl Account {
         let manager = p_generator::GeneratorManager::new();
 
         let acc = Account {
-            id: uuid::Uuid::new_v4(),
+            id: Some(uuid::Uuid::new_v4()),
             website: String::from("[website]"),
-            username: String::from("[username]"),
+            username: Some(String::from("[username]")),
             password: manager.generate_password(12),
-            password_hint: String::from("[hint]"),
-            questions: vec![],
-            notes: String::from("[notes]")
+            password_hint: Some(String::from("[hint]")),
+            questions: Some(vec![]),
+            notes: Some(String::from("[notes]"))
         };
 
         let bytes = ser::to_vec(&acc).unwrap();
-        metadata::Metadata::new(offset, acc.id, bytes.len())?;
+        metadata::Metadata::new(offset, acc.id.unwrap_or(Uuid::new_v4()), bytes.len())?;
 
         f.write_all(&bytes)?;
 
-        metadata::Metadata::sort_indexes();
+        //metadata::Metadata::sort_indexes();
 
         Ok(acc)
     }
 
     fn save(&self, account: &mut Account) -> Result<(), io::Error> {
         let manager = MetaManager {};
-        let meta = manager.get(account.id);
-
-        let a = match meta {
-            Ok(a) => a,
-            Err(er) => {
-                
-            }
-        };
+        let meta = manager.get(account.id.unwrap_or(Uuid::new_v4()));
 
         let mut f = File::open("accounts.dat")?;
         let offset = f.seek(SeekFrom::Start(0))? as usize;
         let next = -1;
 
-        while next != 0 && offset <= f.metadata().unwrap().len() {
-            let meta = metadata::get(account);
+        while next != 0 && offset <= f.metadata().unwrap().len() as usize {
+            let meta = manager.get(account.id.unwrap_or(Uuid::new_v4()));
         }
         
         //Serialize account
@@ -78,7 +71,7 @@ impl Account {
         let bson_account_size = bson_account.len() * mem::size_of::<u8>();
 
         //Init and serialize metadata
-        let mut metadata = metadata::Metadata::new(offset, account.id, bson_account_size)?;
+        let mut metadata = metadata::Metadata::new(offset, account.id.unwrap_or(Uuid::new_v4()), bson_account_size)?;
 
         let bson_metadata = ser::to_vec(&metadata).unwrap();
         
@@ -104,11 +97,36 @@ impl Account {
 }
 
 #[tauri::command]
-fn init_accounts() -> Result<Vec<Account>, io::Error> {
-    let contents = fs::read("accounts.dat")?;
+pub fn init_accounts() -> Result<Vec<Account>, String> {
+    let contents = match fs::read("accounts.dat") {
+        Ok(data) => data,
+        Err(e) => return Err(format!("Failed to read file: {}", e))
+    };
     
-    let doc = bson::from_slice(&contents).unwrap();
-    let acc: Vec<Account> = from_bson(Bson::Document(doc)).unwrap();
+    let doc = match bson::from_slice(&contents) {
+        Ok(doc) => doc,
+        Err(e) => return Err(format!("Failed to deserialize BSON: {}", e))
+    };
 
+    let acc: Vec<Account> = match from_bson(Bson::Document(doc)) {
+        Ok(acc) => acc,
+        Err(e) => return Err(format!("Failed to convert BSON to Vec<Accout>: {}", e))
+    };
+
+    Ok(acc)
+}
+
+#[tauri::command]
+pub fn init_accounts_json() -> Result<Vec<Account>, String> {
+    let contents = match fs::read("accounts.json") {
+        Ok(c) => c,
+        Err(e) => return Err(format!("Failed to read file: {}", e))
+    };
+
+    let acc: Vec<Account> = match serde_json::from_slice(&contents) {
+        Ok(acc) => acc,
+        Err(e) => return Err(format!("Failed to convert JSON to Vec<Account>: {}", e))
+    };
+    
     Ok(acc)
 }
