@@ -1,53 +1,80 @@
 use tauri::utils::acl::identifier;
 use uuid::Uuid;
 use sha2::{Sha256, Digest};
-use bson::{doc, Bson, ser};
-use std::{fs::File, io::{self, Read, Seek, SeekFrom}, mem};
+use bson::{doc, from_bson, from_slice, ser, Bson, Document};
+use std::{fs::{File, OpenOptions}, io::{self, Read, Seek, SeekFrom, Write}, mem};
+
+use super::account::Account;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Metadata {
     pub offset: usize,
-    pub next: usize,
+    pub size: usize,
 
     pub identifier: Uuid,
-    pub hash: String,
+    //pub hash: String,
+}
+
+pub struct MetaManager {}
+
+impl MetaManager {
+    pub fn get(&self, id: Uuid) -> Result<Metadata, io::Error> {
+        let mut f = File::open("accounts.di")?;
+        let mut offset: usize = 0;
+
+        const META_SIZE: usize = Metadata::get_total_size();
+
+        loop {
+            if offset >= f.metadata()?.len() as usize {
+                return Err(io::Error::new(io::ErrorKind::NotFound, "Uuid not found"));
+            }
+
+            f.seek(SeekFrom::Start(offset as u64))?;
+
+            let mut buf = vec![0; META_SIZE];
+
+            f.read_exact(&mut buf)?;
+
+            let doc = bson::from_slice(&buf).unwrap();
+            let meta: Metadata = from_bson(Bson::Document(doc)).unwrap();
+
+            if meta.identifier == id {
+                return Ok(meta);
+            } else {
+                offset += META_SIZE;
+            }
+        }
+    }
+
+    pub fn sort_indexes() -> Result<(), io::Error> {
+        let mut f = OpenOptions::new().read(true).write(true).open("accounts.di")?;
+
+        //Sort
+
+
+
+        Ok(())
+    }
 }
 
 impl Metadata {
-    pub fn new(offset: usize, next_account: usize) -> Result<Metadata, io::Error> {
-        let mut f = File::open("account.txt")?;
-        f.seek(SeekFrom::Start(offset as u64))?;
+    pub fn new(offset: usize, id: Uuid, size: usize) -> Result<Metadata, io::Error> {
+        let mut f = OpenOptions::new().write(true).append(true).open("accounts.di")?;   //di stands for data index        
+        f.seek(SeekFrom::End(0))?;
+        
+        let meta = Metadata {
+            identifier: id,
+            offset: offset,
+            size: size
+        };
+        
+        let data = ser::to_vec(&meta).unwrap();
+        f.write_all(&data)?;
 
-        let mut buf = vec![0; get_total_size()];
-        f.read_exact(&mut buf)?;
-
-        Ok(bson::from_slice::<Metadata>(&buf).unwrap())
-
-        // Ok(Metadata {
-        //     offset: offset,
-        //     identifier: uuid::Uuid::new_v4(),
-        //     hash: "".to_owned(),
-        //     next: next_account
-        // })
+        Ok(meta)
     }
 
-    
-
-    pub fn init_for_write(&mut self) {
-        self.next += ser::to_vec(&self).unwrap().len() * mem::size_of::<u8>();
+    pub const fn get_total_size() -> usize {
+        (mem::size_of::<usize>() * 2) + mem::size_of::<Uuid>()
     }
-}
-
-pub fn get(offset: usize) -> Result<Metadata, io::Error> {
-    let mut f = File::open("account.txt")?;
-    f.seek(SeekFrom::Start(offset as u64))?;
-
-    let mut buf = vec![0; get_total_size()];
-    f.read_exact(&mut buf)?;
-
-    Ok(bson::from_slice::<Metadata>(&buf).unwrap())
-}
-
-pub fn get_total_size() -> usize {
-    (mem::size_of::<usize>() * 2) + mem::size_of::<Uuid>() + 256
 }
