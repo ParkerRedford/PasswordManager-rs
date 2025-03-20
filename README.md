@@ -1,6 +1,6 @@
 Uploaded to GitHub so that I can recover the project if I accidentally delete it on my computer.
 
-Frontend update so that the app displays information from a JSON file. Here is what you need.
+Get a JSON file and fill it with accouunt information. Put the JSON file in the same directory as the binary file. Here is what the app requires for the JSON file.
 ```json
 [
 {
@@ -20,5 +20,3 @@ Frontend update so that the app displays information from a JSON file. Here is w
 }
 ]
 ```
-
-The app, so far, only has one working function (and tested) that randomly generates a password and returns a String variable. The get() function in the Metadata should work too, but it uses the linear search algorithm. I will eventually implement the B-Tree algorithm for faster queries.
