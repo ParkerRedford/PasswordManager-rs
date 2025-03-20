@@ -1,5 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
+use tauri::{Emitter, Window};
+
 pub mod accounts {
     pub mod metadata;
     pub mod account;
@@ -17,11 +19,6 @@ fn pm_generate_password(n: u8, excludes: Vec<char>) -> String {
     pmanager.set_excludes(excludes);
 
     pmanager.generate_password(n)
-}
-
-#[tauri::command]
-fn set_excludes(arr: Vec<char>) -> bool {
-    true
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

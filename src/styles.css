@@ -114,3 +114,9 @@ button {
     background-color: #0f0f0f69;
   }
 }
+
+.dotted-line {
+  width: 100%;
+  border-bottom: 2px dotted white;
+  margin: 5px 0;
+}
