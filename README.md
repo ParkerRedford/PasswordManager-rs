@@ -8,7 +8,8 @@ Get a JSON file and fill it with accouunt information. Put the JSON file in the 
     "website": "String", //required
     "username": "String", //optional
     "password": "String", //required
-    "password_hint": "String" //optional
+    "password_hint": "String" //optional,
+    "passkey": "unkown" //optional: will implement eventually
     "questions": [    //optional
       ["question -> String", "answer -> String"],
       ["question -> String", "answer -> String"]
